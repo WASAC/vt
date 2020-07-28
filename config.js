@@ -1,0 +1,665 @@
+require('dotenv').config();
+
+module.exports = {
+    db: {
+      user:process.env.db_user,
+      password:process.env.db_password,
+      host:process.env.db_host,
+      post:process.env.db_port,
+      database:'rwss_assets',
+    },
+    mbtiles: __dirname + '/data/rwss.mbtiles',
+    minzoom: 8,
+    maxzoom: 14,
+    layers : [
+        {
+            name: 'pipeline',
+            geojsonFileName: __dirname + '/pipeline.geojson',
+            select: `
+            SELECT row_to_json(featurecollection) AS json FROM (
+              SELECT
+                'FeatureCollection' AS type,
+                array_to_json(array_agg(feature)) AS features
+              FROM (
+                SELECT
+                  'Feature' AS type,
+                  ST_AsGeoJSON(ST_MakeValid(x.geom))::json AS geometry,
+                  row_to_json((
+                    SELECT t FROM (
+                      SELECT
+                        14 as maxzoom,
+                        11 as minzoom
+                    ) AS t
+                  )) AS tippecanoe,
+                  row_to_json((
+                    SELECT p FROM (
+                      SELECT
+                        x.pipe_id as fid,
+                        x.material,
+                        x.pipe_size,
+                        x.pressure,
+                        x.construction_year,
+                        x.rehabilitation_year,
+                        x.input_date
+                    ) AS p
+                  )) AS properties
+                FROM pipeline x
+                WHERE NOT ST_IsEmpty(x.geom)
+              ) AS feature
+            ) AS featurecollection
+            `
+        },
+        {
+          name: 'connection',
+          geojsonFileName: __dirname + '/connection.geojson',
+          select:`
+          SELECT row_to_json(featurecollection) AS json FROM (
+            SELECT
+              'FeatureCollection' AS type,
+              array_to_json(array_agg(feature)) AS features
+            FROM (
+              SELECT
+              'Feature' AS type,
+              ST_AsGeoJSON(x.geom)::json AS geometry,
+              row_to_json((
+                SELECT t FROM (
+                  SELECT
+                    14 as maxzoom,
+                    14 as minzoom
+                ) AS t
+              )) AS tippecanoe,
+              row_to_json((
+                SELECT p FROM (
+                  SELECT
+                  	x.connection_id as fid, 
+                    x.connection_type,
+                    x.no_user, 
+                    x.water_meter, 
+                    a.status, 
+                    x.observation, 
+                    x.elevation, 
+                    x.input_date, 
+                    x.construction_year, 
+                    x.rehabilitation_year
+                ) AS p
+              )) AS properties
+              FROM water_connection x
+              INNER JOIN status a
+              ON x.status = a.code
+              WHERE NOT ST_IsEmpty(x.geom)
+            ) AS feature
+          ) AS featurecollection
+          `
+        },
+        {
+          name: 'chamber',
+          geojsonFileName: __dirname + '/chamber.geojson',
+          select:`
+          SELECT row_to_json(featurecollection) AS json FROM (
+            SELECT
+              'FeatureCollection' AS type,
+              array_to_json(array_agg(feature)) AS features
+            FROM (
+              SELECT
+              'Feature' AS type,
+              ST_AsGeoJSON(x.geom)::json AS geometry,
+              row_to_json((
+                SELECT t FROM (
+                  SELECT
+                    14 as maxzoom,
+                    14 as minzoom
+                ) AS t
+              )) AS tippecanoe,
+              row_to_json((
+                SELECT p FROM (
+                  SELECT
+                  	x.chamber_id as fid, 
+                    x.chamber_type, 
+                    x.chamber_size, 
+                    x.material, 
+                    a.status, 
+                    x.observation, 
+                    x.elevation, 
+                    x.is_breakpressure, 
+                    x.chlorination_unit, 
+                    x.construction_year,
+                    x.rehabilitation_year,
+                    x.input_date
+                ) AS p
+              )) AS properties
+              FROM chamber x
+              INNER JOIN status a
+              ON x.status = a.code
+              WHERE NOT ST_IsEmpty(x.geom)
+            ) AS feature
+          ) AS featurecollection
+          `
+        },
+        {
+          name: 'watersource',
+          geojsonFileName: __dirname + '/watersource.geojson',
+          select:`
+          SELECT row_to_json(featurecollection) AS json FROM (
+            SELECT
+              'FeatureCollection' AS type,
+              array_to_json(array_agg(feature)) AS features
+            FROM (
+              SELECT
+              'Feature' AS type,
+              ST_AsGeoJSON(x.geom)::json AS geometry,
+              row_to_json((
+                SELECT t FROM (
+                  SELECT
+                    14 as maxzoom,
+                    12 as minzoom
+                ) AS t
+              )) AS tippecanoe,
+              row_to_json((
+                SELECT p FROM (
+                  SELECT
+                  	x.watersource_id as fid, 
+                    x.source_type, 
+                    x.discharge,  
+                    x.water_meter, 
+                    a.status, 
+                    x.observation, 
+                    x.elevation, 
+                    x.chlorination_unit, 
+                    x.source_protected, 
+                    x.construction_year,
+                    x.rehabilitation_year,
+                    x.input_date
+                ) AS p
+              )) AS properties
+              FROM watersource x
+              INNER JOIN status a
+              ON x.status = a.code
+              WHERE NOT ST_IsEmpty(x.geom)
+            ) AS feature
+          ) AS featurecollection
+          `
+        },
+        {
+          name: 'reservoir',
+          geojsonFileName: __dirname + '/reservoir.geojson',
+          select:`
+          SELECT row_to_json(featurecollection) AS json FROM (
+            SELECT
+              'FeatureCollection' AS type,
+              array_to_json(array_agg(feature)) AS features
+            FROM (
+              SELECT
+              'Feature' AS type,
+              ST_AsGeoJSON(x.geom)::json AS geometry,
+              row_to_json((
+                SELECT t FROM (
+                  SELECT
+                    14 as maxzoom,
+                    12 as minzoom
+                ) AS t
+              )) AS tippecanoe,
+              row_to_json((
+                SELECT p FROM (
+                  SELECT
+                    x.reservoir_id as fid, 
+                    x.reservoir_type,
+                    x.capacity, 
+                    x.material, 
+                    x.water_meter, 
+                    a.status, 
+                    x.observation, 
+                    x.elevation, 
+                    x.is_breakpressure, 
+                    x.meter_installation_date, 
+                    x.chlorination_unit, 
+                    x.construction_year, 
+                    x.rehabilitation_year,
+                    x.input_date
+                ) AS p
+              )) AS properties
+              FROM reservoir x
+              INNER JOIN status a
+              ON x.status = a.code
+              WHERE NOT ST_IsEmpty(x.geom) 
+            ) AS feature
+          ) AS featurecollection
+          `
+        },
+        {
+            name: 'pumping_station',
+            geojsonFileName: __dirname + '/pumping_station.geojson',
+            select:`
+            SELECT row_to_json(featurecollection) AS json FROM (
+              SELECT
+                'FeatureCollection' AS type,
+                array_to_json(array_agg(feature)) AS features
+              FROM (
+                SELECT
+                'Feature' AS type,
+                ST_AsGeoJSON(x.geom)::json AS geometry,
+                row_to_json((
+                  SELECT t FROM (
+                    SELECT
+                      14 as maxzoom,
+                      12 as minzoom
+                  ) AS t
+                )) AS tippecanoe,
+                row_to_json((
+                  SELECT p FROM (
+                    SELECT
+                      x.pumpingstation_id as fid, 
+                      a.status, 
+                      x.head_pump, 
+                      x.power_pump, 
+                      x.discharge_pump, 
+                      x.pump_type, 
+                      x.power_source, 
+                      x.no_pump, 
+                      x.kva, 
+                      x.no_generator, 
+                      x.observation, 
+                      x.elevation, 
+                      x.pump_installation_date, 
+                      x.meter_installation_date, 
+                      x.capacity_antihummber, 
+                      x.water_meter, 
+                      x.chlorination_unit, 
+                      x.installation_antihummer, 
+                      x.construction_year, 
+                      x.rehabilitation_year,
+                      x.input_date
+                  ) AS p
+                )) AS properties
+                FROM pumping_station x
+                INNER JOIN status a
+                ON x.status = a.code
+                WHERE NOT ST_IsEmpty(x.geom)
+              ) AS feature
+            ) AS featurecollection
+            `
+        },
+        // {
+        //   name: 'parcels',
+        //   geojsonFileName: __dirname + '/parcels.geojson',
+        //   select:`
+        //   SELECT row_to_json(featurecollection) AS json FROM (
+        //     SELECT
+        //       'FeatureCollection' AS type,
+        //       array_to_json(array_agg(feature)) AS features
+        //     FROM (
+        //       SELECT
+        //       'Feature' AS type,
+        //       ST_AsGeoJSON(x.geom)::json AS geometry,
+        //       row_to_json((
+        //         SELECT t FROM (
+        //           SELECT
+        //             18 as maxzoom,
+        //             16 as minzoom
+        //         ) AS t
+        //       )) AS tippecanoe,
+        //       row_to_json((
+        //         SELECT p FROM (
+        //         SELECT
+        //           x.fid,
+        //           x."Parcel_ID" parcel_no
+        //         ) AS p
+        //       )) AS properties
+        //       FROM parcels x
+        //       WHERE NOT ST_IsEmpty(x.geom)
+        //     ) AS feature
+        //   ) AS featurecollection
+        //   `
+        // },
+        // {
+        //   name: 'parcels_annotation',
+        //   geojsonFileName: __dirname + '/parcels_annotation.geojson',
+        //   select:`
+        //   SELECT row_to_json(featurecollection) AS json FROM (
+        //     SELECT
+        //       'FeatureCollection' AS type,
+        //       array_to_json(array_agg(feature)) AS features
+        //     FROM (
+        //       SELECT
+        //       'Feature' AS type,
+        //       ST_AsGeoJSON(ST_CENTROID(geom))::json AS geometry,
+        //       row_to_json((
+        //         SELECT t FROM (
+        //           SELECT
+        //             18 as maxzoom,
+        //             17 as minzoom
+        //         ) AS t
+        //       )) AS tippecanoe,
+        //       row_to_json((
+        //         SELECT p FROM (
+        //         SELECT
+        //           x.fid,
+        //           x."Parcel_ID" parcel_no
+        //         ) AS p
+        //       )) AS properties
+        //       FROM percels x
+        //       WHERE NOT ST_IsEmpty(x.geom)
+        //     ) AS feature
+        //   ) AS featurecollection
+        //   `
+        // },
+        {
+          name: 'wss',
+          geojsonFileName: __dirname + '/wss.geojson',
+          select:`
+          SELECT row_to_json(featurecollection) AS json FROM (
+            SELECT
+              'FeatureCollection' AS type,
+              array_to_json(array_agg(feature)) AS features
+            FROM (
+              SELECT
+              'Feature' AS type,
+              ST_AsGeoJSON(x.geom)::json AS geometry,
+              row_to_json((
+                SELECT t FROM (
+                  SELECT
+                    14 as maxzoom,
+                    9 as minzoom
+                ) AS t
+              )) AS tippecanoe,
+              row_to_json((
+                SELECT p FROM (
+                SELECT
+                  x.wss_id,
+                  x.wss_name,  
+                  x.wss_type,
+                  x.status,
+                  x.description
+                ) AS p
+              )) AS properties
+              FROM wss x
+              WHERE NOT ST_IsEmpty(x.geom)
+            ) AS feature
+          ) AS featurecollection
+          `
+        },
+        {
+          name: 'wss_annotation',
+          geojsonFileName: __dirname + '/wss_annotation.geojson',
+          select:`
+          SELECT row_to_json(featurecollection) AS json FROM (
+            SELECT
+              'FeatureCollection' AS type,
+              array_to_json(array_agg(feature)) AS features
+            FROM (
+              SELECT
+              'Feature' AS type,
+              ST_AsGeoJSON(ST_CENTROID(geom))::json AS geometry,
+              row_to_json((
+                SELECT t FROM (
+                  SELECT
+                    14 as maxzoom,
+                    11 as minzoom
+                ) AS t
+              )) AS tippecanoe,
+              row_to_json((
+                SELECT p FROM (
+                SELECT
+                  x.wss_id, 
+                  x.wss_name
+                ) AS p
+              )) AS properties
+              FROM wss x
+              WHERE NOT ST_IsEmpty(x.geom)
+            ) AS feature
+          ) AS featurecollection
+          `
+        },
+        {
+          name: 'district',
+          geojsonFileName: __dirname + '/district.geojson',
+          select:`
+          SELECT row_to_json(featurecollection) AS json FROM (
+            SELECT
+              'FeatureCollection' AS type,
+              array_to_json(array_agg(feature)) AS features
+            FROM (
+              SELECT
+              'Feature' AS type,
+              ST_AsGeoJSON(x.geom)::json AS geometry,
+              row_to_json((
+                SELECT t FROM (
+                  SELECT
+                    14 as maxzoom,
+                    8 as minzoom
+                ) AS t
+              )) AS tippecanoe,
+              row_to_json((
+                SELECT p FROM (
+                SELECT
+                  x.dist_id
+                ) AS p
+              )) AS properties
+              FROM district x
+              WHERE NOT ST_IsEmpty(x.geom)
+            ) AS feature
+          ) AS featurecollection
+          `
+        },
+        {
+          name: 'district_annotation',
+          geojsonFileName: __dirname + '/district_annotation.geojson',
+          select:`
+          SELECT row_to_json(featurecollection) AS json FROM (
+            SELECT
+              'FeatureCollection' AS type,
+              array_to_json(array_agg(feature)) AS features
+            FROM (
+              SELECT
+              'Feature' AS type,
+              ST_AsGeoJSON(ST_CENTROID(geom))::json AS geometry,
+              row_to_json((
+                SELECT t FROM (
+                  SELECT
+                    11 as maxzoom,
+                    8 as minzoom
+                ) AS t
+              )) AS tippecanoe,
+              row_to_json((
+                SELECT p FROM (
+                SELECT
+                  x.dist_id, 
+                  x.district
+                ) AS p
+              )) AS properties
+              FROM district x
+              WHERE NOT ST_IsEmpty(x.geom)
+            ) AS feature
+          ) AS featurecollection
+          `
+        },
+        {
+          name: 'sector',
+          geojsonFileName: __dirname + '/sector.geojson',
+          select:`
+          SELECT row_to_json(featurecollection) AS json FROM (
+            SELECT
+              'FeatureCollection' AS type,
+              array_to_json(array_agg(feature)) AS features
+            FROM (
+              SELECT
+              'Feature' AS type,
+              ST_AsGeoJSON(x.geom)::json AS geometry,
+              row_to_json((
+                SELECT t FROM (
+                  SELECT
+                    14 as maxzoom,
+                    10 as minzoom
+                ) AS t
+              )) AS tippecanoe,
+              row_to_json((
+                SELECT p FROM (
+                SELECT
+                  x.sect_id
+                ) AS p
+              )) AS properties
+              FROM sector x
+              WHERE NOT ST_IsEmpty(x.geom)
+            ) AS feature
+          ) AS featurecollection
+          `
+        },
+        {
+          name: 'sector_annotation',
+          geojsonFileName: __dirname + '/sector_annotation.geojson',
+          select:`
+          SELECT row_to_json(featurecollection) AS json FROM (
+            SELECT
+              'FeatureCollection' AS type,
+              array_to_json(array_agg(feature)) AS features
+            FROM (
+              SELECT
+              'Feature' AS type,
+              ST_AsGeoJSON(ST_CENTROID(geom))::json AS geometry,
+              row_to_json((
+                SELECT t FROM (
+                  SELECT
+                    14 as maxzoom,
+                    10 as minzoom
+                ) AS t
+              )) AS tippecanoe,
+              row_to_json((
+                SELECT p FROM (
+                SELECT
+                  x.sect_id, 
+                  x.sector
+                ) AS p
+              )) AS properties
+              FROM sector x
+              WHERE NOT ST_IsEmpty(x.geom)
+            ) AS feature
+          ) AS featurecollection
+          `
+        },
+        {
+          name: 'cell',
+          geojsonFileName: __dirname + '/cell.geojson',
+          select:`
+          SELECT row_to_json(featurecollection) AS json FROM (
+            SELECT
+              'FeatureCollection' AS type,
+              array_to_json(array_agg(feature)) AS features
+            FROM (
+              SELECT
+              'Feature' AS type,
+              ST_AsGeoJSON(x.geom)::json AS geometry,
+              row_to_json((
+                SELECT t FROM (
+                  SELECT
+                    14 as maxzoom,
+                    13 as minzoom
+                ) AS t
+              )) AS tippecanoe,
+              row_to_json((
+                SELECT p FROM (
+                SELECT
+                  x.cell_id
+                ) AS p
+              )) AS properties
+              FROM cell x
+              WHERE NOT ST_IsEmpty(x.geom)
+            ) AS feature
+          ) AS featurecollection
+          `
+        },
+        {
+          name: 'cell_annotation',
+          geojsonFileName: __dirname + '/cell_annotation.geojson',
+          select:`
+          SELECT row_to_json(featurecollection) AS json FROM (
+            SELECT
+              'FeatureCollection' AS type,
+              array_to_json(array_agg(feature)) AS features
+            FROM (
+              SELECT
+              'Feature' AS type,
+              ST_AsGeoJSON(ST_CENTROID(geom))::json AS geometry,
+              row_to_json((
+                SELECT t FROM (
+                  SELECT
+                    14 as maxzoom,
+                    13 as minzoom
+                ) AS t
+              )) AS tippecanoe,
+              row_to_json((
+                SELECT p FROM (
+                SELECT
+                  x.cell_id, 
+                  x.cell
+                ) AS p
+              )) AS properties
+              FROM cell x
+              WHERE NOT ST_IsEmpty(x.geom)
+            ) AS feature
+          ) AS featurecollection
+          `
+        },
+        {
+          name: 'village',
+          geojsonFileName: __dirname + '/village.geojson',
+          select:`
+          SELECT row_to_json(featurecollection) AS json FROM (
+            SELECT
+              'FeatureCollection' AS type,
+              array_to_json(array_agg(feature)) AS features
+            FROM (
+              SELECT
+              'Feature' AS type,
+              ST_AsGeoJSON(x.geom)::json AS geometry,
+              row_to_json((
+                SELECT t FROM (
+                  SELECT
+                    14 as maxzoom,
+                    14 as minzoom
+                ) AS t
+              )) AS tippecanoe,
+              row_to_json((
+                SELECT p FROM (
+                SELECT
+                  x.vill_id
+                ) AS p
+              )) AS properties
+              FROM village x
+              WHERE NOT ST_IsEmpty(x.geom)
+            ) AS feature
+          ) AS featurecollection
+          `
+        },
+        {
+          name: 'village_annotation',
+          geojsonFileName: __dirname + '/village_annotation.geojson',
+          select:`
+          SELECT row_to_json(featurecollection) AS json FROM (
+            SELECT
+              'FeatureCollection' AS type,
+              array_to_json(array_agg(feature)) AS features
+            FROM (
+              SELECT
+              'Feature' AS type,
+              ST_AsGeoJSON(ST_CENTROID(geom))::json AS geometry,
+              row_to_json((
+                SELECT t FROM (
+                  SELECT
+                    14 as maxzoom,
+                    14 as minzoom
+                ) AS t
+              )) AS tippecanoe,
+              row_to_json((
+                SELECT p FROM (
+                SELECT
+                  x.vill_id, 
+                  x.village
+                ) AS p
+              )) AS properties
+              FROM village x
+              WHERE NOT ST_IsEmpty(x.geom)
+            ) AS feature
+          ) AS featurecollection
+          `
+        }
+    ],
+};
