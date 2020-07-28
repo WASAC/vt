@@ -17,4 +17,4 @@ License][cc-by].
 
 
 ---
-Copyright (c) 2020Water and Sanitation Corporation, Ltd.
+Copyright (c) 2020 Water and Sanitation Corporation, Ltd.
