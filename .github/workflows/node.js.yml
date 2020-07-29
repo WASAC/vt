@@ -22,10 +22,10 @@ jobs:
       env:
         NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
     - run: npm run extract
-    - name: configure git and commit
+    - name: configure git and deploy
       run: |
         git config --global user.name "wasac+githubci"
         git config --global user.email "wasac+githubci@users.noreply.github.com"
-    - run: npm run deploy
+        npm run deploy
       env:
         NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
