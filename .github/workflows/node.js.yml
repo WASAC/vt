@@ -24,7 +24,7 @@ jobs:
     - run: npm run extract
     - name: configure git and commit
       run: |
-        git config user.name "wasac+githubci"
+        git config user.name "wasac"
         git config user.email "wasac+githubci@users.noreply.github.com"
     - run: npm run deploy
       env:
