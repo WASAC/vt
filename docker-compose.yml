@@ -2,7 +2,7 @@ version: '2'
 services:
   nodejs:
     image: wasac/vt:v0.0.1
-    build: .
+    # build: .
     environment: 
      - db_user=postgres
      - db_password=$db_password
