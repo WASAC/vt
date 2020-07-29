@@ -1,4 +1,5 @@
 # vt
+![](https://github.com/wasac/vt/workflows/Node.js%20CI/badge.svg)
 ![GitHub](https://img.shields.io/github/license/wasac/vt)
 ![Docker Cloud Automated build](https://img.shields.io/docker/cloud/automated/wasac/vt)
 ![Docker Image Size (latest by date)](https://img.shields.io/docker/image-size/wasac/vt)
