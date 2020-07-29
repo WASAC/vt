@@ -26,8 +26,6 @@ jobs:
       run: |
         git config user.name "wasac+githubci"
         git config user.email "wasac+githubci@users.noreply.github.com"
-        git add .
-        git commit -m "update vectortiles"
     - run: npm run deploy
       env:
         NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
