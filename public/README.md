@@ -2,6 +2,13 @@
 
 This is to provide the water supply network data through Mapbox Vector Tile format which is owned by [Water and Sanitation Corporation (WASAC)(https://www.wasac.rw) in Rwanda.
 
+## Usage
+
+Vector tile URL
+```
+https://wasac.github.io/vt/tiles/{z}/{x}/{y}.mvt
+```
+
 ## License
 
 Shield: [![CC BY 4.0][cc-by-shield]][cc-by]
