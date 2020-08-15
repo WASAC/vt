@@ -346,6 +346,176 @@ module.exports = {
           name: 'wss',
           geojsonFileName: __dirname + '/wss.geojson',
           select:`
+          -- Water Connection Summary
+          WITH household as(
+          SELECT 
+            a.wss_id,
+            COUNT(*) as no_household
+          FROM water_connection a
+          WHERE a.connection_type = 'Household'
+          GROUP BY a.wss_id
+          ),
+          publictap as (
+          SELECT 
+            a.wss_id,
+            COUNT(*) as no_publictap
+          FROM water_connection a
+          WHERE a.connection_type = 'Public Tap'
+          GROUP BY a.wss_id
+          ),
+          waterkiosk as (
+          SELECT 
+            a.wss_id,
+            COUNT(*) as no_waterkiosk
+          FROM water_connection a
+          WHERE a.connection_type = 'Water Kiosk'
+          GROUP BY a.wss_id
+          ),
+          institution as (
+          SELECT 
+            a.wss_id,
+            COUNT(*) as no_institution
+          FROM water_connection a
+          WHERE a.connection_type = 'Institution'
+          GROUP BY a.wss_id
+          ),
+          industrial as (
+          SELECT 
+            a.wss_id,
+            COUNT(*) as no_industrial
+          FROM water_connection a
+          WHERE a.connection_type = 'Industrial'
+          GROUP BY a.wss_id
+          ),
+          other_connection as (
+          SELECT 
+            a.wss_id,
+            COUNT(*) as no_other_connection
+          FROM water_connection a
+          WHERE a.connection_type NOT IN ('Household', 'Public Tap', 'Water Kiosk', 'Industrial', 'Institution')
+          GROUP BY a.wss_id
+          ),
+          -- Chamber Summary
+          valve_chamber as (
+          SELECT 
+            a.wss_id,
+            COUNT(*) as no_valve_chamber
+          FROM chamber a
+          WHERE a.chamber_type = 'Valve chamber'
+          GROUP BY a.wss_id
+          ),
+          air_release_chamber as (
+          SELECT 
+            a.wss_id,
+            COUNT(*) as no_air_release_chamber
+          FROM chamber a
+          WHERE a.chamber_type = 'Air release chamber'
+          GROUP BY a.wss_id
+          ),
+          washout_chamber as(
+          SELECT 
+            a.wss_id,
+            COUNT(*) as no_washout_chamber
+          FROM chamber a
+          WHERE a.chamber_type = 'Washout chamber'
+          GROUP BY a.wss_id
+          ),
+          break_pressure_chamber as (
+          SELECT 
+            a.wss_id,
+            COUNT(*) as no_break_pressure_chamber
+          FROM chamber a
+          WHERE a.chamber_type = 'Break Pressure chamber'
+          GROUP BY a.wss_id
+          ),
+          prv_chamber as(
+          SELECT 
+            a.wss_id,
+            COUNT(*) as no_prv_chamber
+          FROM chamber a
+          WHERE a.chamber_type = 'PRV chamber'
+          GROUP BY a.wss_id
+          ),
+          starting_chamber as (
+          SELECT 
+            a.wss_id,
+            COUNT(*) as no_starting_chamber
+          FROM chamber a
+          WHERE a.chamber_type = 'Starting chamber'
+          GROUP BY a.wss_id
+          ),
+          collection_chamber as (
+          SELECT 
+            a.wss_id,
+            COUNT(*) as no_collection_chamber
+          FROM chamber a
+          WHERE a.chamber_type = 'Collection chamber'
+          GROUP BY a.wss_id
+          ),
+          pumping_station as (
+          SELECT 
+            a.wss_id,
+            COUNT(*) as no_pumping_station
+          FROM pumping_station a
+          GROUP BY a.wss_id
+          ),
+          reservoir as (
+          SELECT 
+            a.wss_id,
+            COUNT(*) as no_reservoir
+          FROM reservoir a
+          GROUP BY a.wss_id
+          ),
+          watersource as (
+          SELECT 
+            a.wss_id,
+            COUNT(*) as no_watersource
+          FROM watersource a 
+          GROUP BY a.wss_id
+          ),
+          -- Pipeline Length
+          pipeline as (
+          SELECT
+          z.wss_id,
+          'Total: ' || CASE WHEN z.pipe_length_total IS NULL THEN 0 ELSE z.pipe_length_total END || E' m\n' ||
+          '<5 years: ' || CASE WHEN z.pipe_length_lt_5_years IS NULL THEN 0 ELSE z.pipe_length_lt_5_years END || E' m\n' ||
+          '<10 years: ' || CASE WHEN z.pipe_length_lt_10_years IS NULL THEN 0 ELSE z.pipe_length_lt_10_years END || E' m\n' || 
+          '<15 years: ' || CASE WHEN z.pipe_length_lt_15_years IS NULL THEN 0 ELSE z.pipe_length_lt_15_years END || E' m\n' ||	 
+          '<20 years: ' || CASE WHEN z.pipe_length_lt_20_years IS NULL THEN 0 ELSE z.pipe_length_lt_20_years END || E' m\n' ||
+          '>=20 years: ' || CASE WHEN z.pipe_length_gt_20_years IS NULL THEN 0 ELSE z.pipe_length_gt_20_years END || E' m\n' ||
+          'Unknown: ' || CASE WHEN z.pipe_length_unknown_years IS NULL THEN 0 ELSE z.pipe_length_unknown_years END || E' m\n' as pipe_length
+          FROM(
+            SELECT
+              y.wss_id,
+              round(SUM(pipe_length), 2) as pipe_length_total,
+              SUM(CASE WHEN y.diff_const_year BETWEEN 0 AND 5 THEN round(pipe_length,2) END) as pipe_length_lt_5_years, 
+              SUM(CASE WHEN y.diff_const_year BETWEEN 6 AND 10 THEN round(pipe_length,2) END) as pipe_length_lt_10_years, 
+              SUM(CASE WHEN y.diff_const_year BETWEEN 11 AND 15 THEN round(pipe_length,2) END) as pipe_length_lt_15_years,	 
+              SUM(CASE WHEN y.diff_const_year BETWEEN 16 AND 20 THEN round(pipe_length,2) END) as pipe_length_lt_20_years,	 
+              SUM(CASE WHEN y.diff_const_year > 20 THEN round(pipe_length,2) END) as pipe_length_gt_20_years,
+              SUM(CASE WHEN y.diff_const_year IS NULL THEN round(pipe_length,2) END) as pipe_length_unknown_years
+            FROM ( 
+            SELECT 
+              x.wss_id,
+              x.diff_const_year, 
+              sum(x.pipe_length) as pipe_length 
+              FROM ( 
+              SELECT
+                pipeline.wss_id,
+                cast(pipeline.pipe_size as integer) as pipe_size,  
+                cast(to_char(current_timestamp, 'YYYY') as integer) - COALESCE(pipeline.rehabilitation_year, pipeline.construction_year) as diff_const_year, 
+                cast(ST_LENGTH(ST_TRANSFORM(pipeline.geom, 32736)) as numeric) as pipe_length 
+              FROM pipeline 
+              INNER JOIN wss ON pipeline.wss_id = wss.wss_id
+              ) x 
+              GROUP BY
+              x.wss_id,
+              x.diff_const_year) y 
+            GROUP BY
+              y.wss_id
+            )z
+          )
+          -- main SQL
           SELECT row_to_json(featurecollection) AS json FROM (
             SELECT
               'FeatureCollection' AS type,
@@ -368,10 +538,44 @@ module.exports = {
                   x.wss_name,  
                   x.wss_type,
                   x.status,
-                  x.description
+                  x.description,
+                  household.no_household,
+                  publictap.no_publictap,
+                  waterkiosk.no_waterkiosk,
+                  institution.no_institution,
+                  industrial.no_industrial,
+                  other_connection.no_other_connection,
+                  valve_chamber.no_valve_chamber,
+                  air_release_chamber.no_air_release_chamber,
+                  washout_chamber.no_washout_chamber,
+                  break_pressure_chamber.no_break_pressure_chamber,
+                  prv_chamber.no_prv_chamber,
+                  starting_chamber.no_starting_chamber,
+                  collection_chamber.no_collection_chamber,
+                  pumping_station.no_pumping_station,
+                  reservoir.no_reservoir,
+                  watersource.no_watersource,
+                  pipeline.pipe_length
                 ) AS p
               )) AS properties
               FROM wss x
+              LEFT JOIN household ON x.wss_id = household.wss_id
+              LEFT JOIN publictap ON x.wss_id = publictap.wss_id
+              LEFT JOIN waterkiosk ON x.wss_id = waterkiosk.wss_id
+              LEFT JOIN institution ON x.wss_id = institution.wss_id
+              LEFT JOIN industrial ON x.wss_id = industrial.wss_id
+              LEFT JOIN other_connection ON x.wss_id = other_connection.wss_id
+              LEFT JOIN valve_chamber ON x.wss_id = valve_chamber.wss_id
+              LEFT JOIN air_release_chamber ON x.wss_id = air_release_chamber.wss_id
+              LEFT JOIN washout_chamber ON x.wss_id = washout_chamber.wss_id
+              LEFT JOIN break_pressure_chamber ON x.wss_id = break_pressure_chamber.wss_id
+              LEFT JOIN prv_chamber ON x.wss_id = prv_chamber.wss_id
+              LEFT JOIN starting_chamber ON x.wss_id = starting_chamber.wss_id
+              LEFT JOIN collection_chamber ON x.wss_id = collection_chamber.wss_id
+              LEFT JOIN pumping_station ON x.wss_id = pumping_station.wss_id
+              LEFT JOIN reservoir ON x.wss_id = reservoir.wss_id
+              LEFT JOIN watersource ON x.wss_id = watersource.wss_id
+              LEFT JOIN pipeline ON x.wss_id = pipeline.wss_id
               WHERE NOT ST_IsEmpty(x.geom)
             ) AS feature
           ) AS featurecollection
