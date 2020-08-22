@@ -474,20 +474,32 @@ module.exports = {
           GROUP BY a.wss_id
           ),
           -- Pipeline Length
-          pipeline as (
+          pipeline_total as (
+            SELECT 
+              x.wss_id,
+              round(SUM(x.pipe_length),2) || ' m' as pipe_length 
+            FROM ( 
+              SELECT
+                pipeline.wss_id,
+                cast(ST_LENGTH(ST_TRANSFORM(pipeline.geom, 32736)) as numeric) as pipe_length 
+              FROM pipeline 
+              INNER JOIN wss ON pipeline.wss_id = wss.wss_id
+              ) x 
+            GROUP BY
+            x.wss_id
+          ),
+          pipeline_year as (
           SELECT
           z.wss_id,
-          'Total: ' || CASE WHEN z.pipe_length_total IS NULL THEN 0 ELSE z.pipe_length_total END || E' m\n' ||
-          '<5 years: ' || CASE WHEN z.pipe_length_lt_5_years IS NULL THEN 0 ELSE z.pipe_length_lt_5_years END || E' m\n' ||
-          '<10 years: ' || CASE WHEN z.pipe_length_lt_10_years IS NULL THEN 0 ELSE z.pipe_length_lt_10_years END || E' m\n' || 
-          '<15 years: ' || CASE WHEN z.pipe_length_lt_15_years IS NULL THEN 0 ELSE z.pipe_length_lt_15_years END || E' m\n' ||	 
-          '<20 years: ' || CASE WHEN z.pipe_length_lt_20_years IS NULL THEN 0 ELSE z.pipe_length_lt_20_years END || E' m\n' ||
-          '>=20 years: ' || CASE WHEN z.pipe_length_gt_20_years IS NULL THEN 0 ELSE z.pipe_length_gt_20_years END || E' m\n' ||
-          'Unknown: ' || CASE WHEN z.pipe_length_unknown_years IS NULL THEN 0 ELSE z.pipe_length_unknown_years END || E' m\n' as pipe_length
+          CASE WHEN z.pipe_length_lt_5_years IS NULL THEN '' ELSE '<=5year: ' || z.pipe_length_lt_5_years || E' m\n' END ||
+          CASE WHEN z.pipe_length_lt_10_years IS NULL THEN '' ELSE '<=10year: ' || z.pipe_length_lt_10_years || E' m\n' END || 
+          CASE WHEN z.pipe_length_lt_15_years IS NULL THEN '' ELSE '<=15year: ' || z.pipe_length_lt_15_years || E' m\n' END ||	 
+          CASE WHEN z.pipe_length_lt_20_years IS NULL THEN '' ELSE '<=20year: ' || z.pipe_length_lt_20_years || E' m\n' END ||
+          CASE WHEN z.pipe_length_gt_20_years IS NULL THEN '' ELSE '20<year: ' || z.pipe_length_gt_20_years || E' m\n' END ||
+          CASE WHEN z.pipe_length_unknown_years IS NULL THEN '' ELSE 'Unknown: ' || z.pipe_length_unknown_years || E' m\n' END as pipe_length
           FROM(
             SELECT
               y.wss_id,
-              round(SUM(pipe_length), 2) as pipe_length_total,
               SUM(CASE WHEN y.diff_const_year BETWEEN 0 AND 5 THEN round(pipe_length,2) END) as pipe_length_lt_5_years, 
               SUM(CASE WHEN y.diff_const_year BETWEEN 6 AND 10 THEN round(pipe_length,2) END) as pipe_length_lt_10_years, 
               SUM(CASE WHEN y.diff_const_year BETWEEN 11 AND 15 THEN round(pipe_length,2) END) as pipe_length_lt_15_years,	 
@@ -502,7 +514,6 @@ module.exports = {
               FROM ( 
               SELECT
                 pipeline.wss_id,
-                cast(pipeline.pipe_size as integer) as pipe_size,  
                 cast(to_char(current_timestamp, 'YYYY') as integer) - COALESCE(pipeline.rehabilitation_year, pipeline.construction_year) as diff_const_year, 
                 cast(ST_LENGTH(ST_TRANSFORM(pipeline.geom, 32736)) as numeric) as pipe_length 
               FROM pipeline 
@@ -511,6 +522,88 @@ module.exports = {
               GROUP BY
               x.wss_id,
               x.diff_const_year) y 
+            GROUP BY
+              y.wss_id
+            )z
+          ),
+          pipeline_material as (
+            SELECT
+              z.wss_id,
+              CASE WHEN z.ac IS NULL THEN '' ELSE 'AC: ' || z.ac || E' m\n' END ||
+              CASE WHEN z.ci IS NULL THEN '' ELSE 'CI: ' || z.ci || E' m\n' END ||
+              CASE WHEN z.di IS NULL THEN '' ELSE 'DI: ' || z.di || E' m\n' END || 
+              CASE WHEN z.gs IS NULL THEN '' ELSE 'GS: ' || z.gs || E' m\n' END ||	 
+              CASE WHEN z.hdpe IS NULL THEN '' ELSE 'HDPE: ' || z.hdpe || E' m\n' END ||	
+              CASE WHEN z.pvc IS NULL THEN '' ELSE 'PVC: ' || z.pvc || E' m\n' END ||
+              CASE WHEN z.unknown IS NULL THEN '' ELSE 'Unknown: ' || z.unknown || E' m\n' END as pipe_length
+            FROM(
+            SELECT
+              y.wss_id,
+              SUM(CASE WHEN y.material = 'AC' THEN round(pipe_length,2) END) as ac, 
+              SUM(CASE WHEN y.material = 'CI' THEN round(pipe_length,2) END) as ci, 
+              SUM(CASE WHEN y.material = 'DI' THEN round(pipe_length,2) END) as di, 
+              SUM(CASE WHEN y.material = 'GS' THEN round(pipe_length,2) END) as gs, 
+              SUM(CASE WHEN y.material = 'HDPE' THEN round(pipe_length,2) END) as hdpe, 
+              SUM(CASE WHEN y.material = 'PVC' THEN round(pipe_length,2) END) as pvc, 
+              SUM(CASE WHEN y.material IS NULL THEN round(pipe_length,2) END) as unknown
+            FROM ( 
+            SELECT 
+              x.wss_id,
+              x.material, 
+              sum(cast(ST_LENGTH(ST_TRANSFORM(x.geom, 32736)) as numeric)) as pipe_length 
+              FROM pipeline x
+              INNER JOIN wss ON x.wss_id = wss.wss_id
+              GROUP BY
+              x.wss_id,
+              x.material) y 
+            GROUP BY
+              y.wss_id
+            )z
+          ),
+          pipeline_diameter as (
+          SELECT
+            z.wss_id,
+            CASE WHEN z.lt_25 IS NULL THEN '' ELSE '<=DN25: ' || z.lt_25 || E' m\n' END ||
+            CASE WHEN z.lt_50 IS NULL THEN '' ELSE '<=DN50: ' || z.lt_50 || E' m\n' END || 
+            CASE WHEN z.lt_75 IS NULL THEN '' ELSE '<=DN75: ' || z.lt_75 || E' m\n' END ||	 
+            CASE WHEN z.lt_110 IS NULL THEN '' ELSE '<=DN110: ' || z.lt_110 || E' m\n' END ||
+            CASE WHEN z.lt_150 IS NULL THEN '' ELSE '<=DN150: ' || z.lt_150 || E' m\n' END ||
+            CASE WHEN z.lt_200 IS NULL THEN '' ELSE '<=DN200: ' || z.lt_200 || E' m\n' END ||
+            CASE WHEN z.lt_300 IS NULL THEN '' ELSE '<=DN300: ' || z.lt_300 || E' m\n' END ||
+            CASE WHEN z.lt_400 IS NULL THEN '' ELSE '<=DN400: ' || z.lt_400 || E' m\n' END ||
+            CASE WHEN z.lt_500 IS NULL THEN '' ELSE '<=DN500: ' || z.lt_500 || E' m\n' END ||
+            CASE WHEN z.gt_500 IS NULL THEN '' ELSE '>DN500: ' || z.gt_500 || E' m\n' END ||
+            CASE WHEN z.unknown IS NULL THEN '' ELSE 'Unknown: ' || z.unknown || E' m\n' END as pipe_length
+          FROM(
+            SELECT
+              y.wss_id,
+              SUM(CASE WHEN y.diameter BETWEEN 0 AND 25 THEN round(pipe_length,2) END) as lt_25, 
+              SUM(CASE WHEN y.diameter BETWEEN 26 AND 50 THEN round(pipe_length,2) END) as lt_50, 
+              SUM(CASE WHEN y.diameter BETWEEN 51 AND 75 THEN round(pipe_length,2) END) as lt_75,	 
+              SUM(CASE WHEN y.diameter BETWEEN 76 AND 110 THEN round(pipe_length,2) END) as lt_110,
+              SUM(CASE WHEN y.diameter BETWEEN 111 AND 150 THEN round(pipe_length,2) END) as lt_150,
+              SUM(CASE WHEN y.diameter BETWEEN 151 AND 200 THEN round(pipe_length,2) END) as lt_200,
+              SUM(CASE WHEN y.diameter BETWEEN 251 AND 300 THEN round(pipe_length,2) END) as lt_300,
+              SUM(CASE WHEN y.diameter BETWEEN 301 AND 400 THEN round(pipe_length,2) END) as lt_400,
+              SUM(CASE WHEN y.diameter BETWEEN 401 AND 500 THEN round(pipe_length,2) END) as lt_500,
+              SUM(CASE WHEN y.diameter > 501 THEN round(pipe_length,2) END) as gt_500,
+              SUM(CASE WHEN y.diameter IS NULL THEN round(pipe_length,2) END) as unknown
+            FROM ( 
+            SELECT 
+              x.wss_id,
+              x.diameter, 
+              sum(x.pipe_length) as pipe_length 
+              FROM ( 
+              SELECT
+                pipeline.wss_id,
+                cast(pipeline.pipe_size as integer) as diameter,  
+                cast(ST_LENGTH(ST_TRANSFORM(pipeline.geom, 32736)) as numeric) as pipe_length 
+              FROM pipeline 
+              INNER JOIN wss ON pipeline.wss_id = wss.wss_id
+              ) x 
+              GROUP BY
+              x.wss_id,
+              x.diameter) y 
             GROUP BY
               y.wss_id
             )z
@@ -539,23 +632,26 @@ module.exports = {
                   x.wss_type,
                   x.status,
                   x.description,
-                  household.no_household,
-                  publictap.no_publictap,
-                  waterkiosk.no_waterkiosk,
-                  institution.no_institution,
-                  industrial.no_industrial,
-                  other_connection.no_other_connection,
-                  valve_chamber.no_valve_chamber,
-                  air_release_chamber.no_air_release_chamber,
-                  washout_chamber.no_washout_chamber,
-                  break_pressure_chamber.no_break_pressure_chamber,
-                  prv_chamber.no_prv_chamber,
-                  starting_chamber.no_starting_chamber,
-                  collection_chamber.no_collection_chamber,
-                  pumping_station.no_pumping_station,
-                  reservoir.no_reservoir,
-                  watersource.no_watersource,
-                  pipeline.pipe_length
+                  household.no_household as household,
+                  publictap.no_publictap as public_tap,
+                  waterkiosk.no_waterkiosk as water_kiosk,
+                  institution.no_institution as institution,
+                  industrial.no_industrial as industrial,
+                  other_connection.no_other_connection as other_connection,
+                  valve_chamber.no_valve_chamber as valve_chamber,
+                  air_release_chamber.no_air_release_chamber as air_release_chamber,
+                  washout_chamber.no_washout_chamber as washout_chamber,
+                  break_pressure_chamber.no_break_pressure_chamber as break_pressure_chamber,
+                  prv_chamber.no_prv_chamber as prv_chamber,
+                  starting_chamber.no_starting_chamber as starting_chamber,
+                  collection_chamber.no_collection_chamber as collection_chamber,
+                  pumping_station.no_pumping_station as pumping_station,
+                  reservoir.no_reservoir as reservoir,
+                  watersource.no_watersource as watersource,
+                  pipeline_total.pipe_length as pipe_length_total,
+                  pipeline_year.pipe_length as pipe_length_by_year,
+                  pipeline_material.pipe_length as pipe_length_by_material,
+                  pipeline_diameter.pipe_length as pipe_length_by_diameter
                 ) AS p
               )) AS properties
               FROM wss x
@@ -575,7 +671,10 @@ module.exports = {
               LEFT JOIN pumping_station ON x.wss_id = pumping_station.wss_id
               LEFT JOIN reservoir ON x.wss_id = reservoir.wss_id
               LEFT JOIN watersource ON x.wss_id = watersource.wss_id
-              LEFT JOIN pipeline ON x.wss_id = pipeline.wss_id
+              LEFT JOIN pipeline_total ON x.wss_id = pipeline_total.wss_id
+              LEFT JOIN pipeline_year ON x.wss_id = pipeline_year.wss_id
+              LEFT JOIN pipeline_material ON x.wss_id = pipeline_material.wss_id
+              LEFT JOIN pipeline_diameter ON x.wss_id = pipeline_diameter.wss_id
               WHERE NOT ST_IsEmpty(x.geom)
             ) AS feature
           ) AS featurecollection
