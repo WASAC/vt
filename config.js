@@ -495,7 +495,7 @@ module.exports = {
           CASE WHEN z.pipe_length_lt_10_years IS NULL THEN '' ELSE '<=10year: ' || z.pipe_length_lt_10_years || E' m\n' END || 
           CASE WHEN z.pipe_length_lt_15_years IS NULL THEN '' ELSE '<=15year: ' || z.pipe_length_lt_15_years || E' m\n' END ||	 
           CASE WHEN z.pipe_length_lt_20_years IS NULL THEN '' ELSE '<=20year: ' || z.pipe_length_lt_20_years || E' m\n' END ||
-          CASE WHEN z.pipe_length_gt_20_years IS NULL THEN '' ELSE '20<year: ' || z.pipe_length_gt_20_years || E' m\n' END ||
+          CASE WHEN z.pipe_length_gt_20_years IS NULL THEN '' ELSE 'over 20year: ' || z.pipe_length_gt_20_years || E' m\n' END ||
           CASE WHEN z.pipe_length_unknown_years IS NULL THEN '' ELSE 'Unknown: ' || z.pipe_length_unknown_years || E' m\n' END as pipe_length
           FROM(
             SELECT
