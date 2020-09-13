@@ -278,70 +278,6 @@ module.exports = {
             ) AS featurecollection
             `
         },
-        // {
-        //   name: 'parcels',
-        //   geojsonFileName: __dirname + '/parcels.geojson',
-        //   select:`
-        //   SELECT row_to_json(featurecollection) AS json FROM (
-        //     SELECT
-        //       'FeatureCollection' AS type,
-        //       array_to_json(array_agg(feature)) AS features
-        //     FROM (
-        //       SELECT
-        //       'Feature' AS type,
-        //       ST_AsGeoJSON(x.geom)::json AS geometry,
-        //       row_to_json((
-        //         SELECT t FROM (
-        //           SELECT
-        //             18 as maxzoom,
-        //             16 as minzoom
-        //         ) AS t
-        //       )) AS tippecanoe,
-        //       row_to_json((
-        //         SELECT p FROM (
-        //         SELECT
-        //           x.fid,
-        //           x."Parcel_ID" parcel_no
-        //         ) AS p
-        //       )) AS properties
-        //       FROM parcels x
-        //       WHERE NOT ST_IsEmpty(x.geom)
-        //     ) AS feature
-        //   ) AS featurecollection
-        //   `
-        // },
-        // {
-        //   name: 'parcels_annotation',
-        //   geojsonFileName: __dirname + '/parcels_annotation.geojson',
-        //   select:`
-        //   SELECT row_to_json(featurecollection) AS json FROM (
-        //     SELECT
-        //       'FeatureCollection' AS type,
-        //       array_to_json(array_agg(feature)) AS features
-        //     FROM (
-        //       SELECT
-        //       'Feature' AS type,
-        //       ST_AsGeoJSON(ST_CENTROID(geom))::json AS geometry,
-        //       row_to_json((
-        //         SELECT t FROM (
-        //           SELECT
-        //             18 as maxzoom,
-        //             17 as minzoom
-        //         ) AS t
-        //       )) AS tippecanoe,
-        //       row_to_json((
-        //         SELECT p FROM (
-        //         SELECT
-        //           x.fid,
-        //           x."Parcel_ID" parcel_no
-        //         ) AS p
-        //       )) AS properties
-        //       FROM percels x
-        //       WHERE NOT ST_IsEmpty(x.geom)
-        //     ) AS feature
-        //   ) AS featurecollection
-        //   `
-        // },
         {
           name: 'wss',
           geojsonFileName: __dirname + '/wss.geojson',
@@ -959,6 +895,52 @@ module.exports = {
                 ) AS p
               )) AS properties
               FROM village x
+              WHERE NOT ST_IsEmpty(x.geom)
+            ) AS feature
+          ) AS featurecollection
+          `
+        },
+        {
+          name: 'water_points',
+          geojsonFileName: __dirname + '/water_points.geojson',
+          select:`
+          SELECT row_to_json(featurecollection) AS json FROM (
+            SELECT
+              'FeatureCollection' AS type,
+              array_to_json(array_agg(feature)) AS features
+            FROM (
+              SELECT
+              'Feature' AS type,
+              ST_AsGeoJSON(ST_TRANSFORM(x.geom,4326))::json AS geometry,
+              row_to_json((
+                SELECT t FROM (
+                  SELECT
+                    14 as maxzoom,
+                    13 as minzoom
+                ) AS t
+              )) AS tippecanoe,
+              row_to_json((
+                SELECT p FROM (
+                  SELECT
+                  	x.id fid, 
+                    x.wsf_code, 
+                    x.wsf_type, 
+                    x.wsf_name, 
+                    x.altitude, 
+                    x.serv_area_villages, 
+                    x.serv_popu_personals, 
+                    x.serv_popu_households, 
+                    x.type_water_source, 
+                    x.no_water_source, 
+                    x.hand_pump_type_name, 
+                    x.year_construction, 
+                    x.fund, 
+                    a.status, 
+                    x.observation
+                ) AS p
+              )) AS properties
+              FROM waterfacilities x
+              INNER JOIN status a ON x.status = a.code
               WHERE NOT ST_IsEmpty(x.geom)
             ) AS feature
           ) AS featurecollection
