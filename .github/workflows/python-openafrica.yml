@@ -19,6 +19,7 @@ jobs:
 
       run: |
         cd scripts
+        pip install pipenv
         pipenv install
     - name: upload to openAFRICA
       env:
