@@ -3,6 +3,7 @@
 ![GitHub](https://img.shields.io/github/license/wasac/vt)
 ![Docker Cloud Automated build](https://img.shields.io/docker/cloud/automated/wasac/vt)
 ![Docker Image Size (latest by date)](https://img.shields.io/docker/image-size/wasac/vt)
+![openAFRICA upload](https://github.com/WASAC/vt/workflows/openAFRICA%20upload/badge.svg)
 
 This is to manage vectortiles for WASAC in Github pages.
 
