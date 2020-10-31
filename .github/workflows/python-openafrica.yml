@@ -1,0 +1,33 @@
+name: openAFRICA upload
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Install dependencies
+
+      run: |
+        cd scripts
+        pipenv install
+    - name: upload to openAFRICA
+      env:
+        CKAN_API_KEY: ${{secrets.CKAN_API_KEY}}
+      run: |
+        cd scripts
+        pipenv run python upload2openafrica.py \
+        --key ${CKAN_API_KEY} \
+        --pkg rw-water-vectortiles \
+        --title "Vector Tiles for rural water supply systems in Rwanda" \
+        --file ../data/rwss.mbtiles \
+        --desc "mbtiles format of Mapbox Vector Tiles which was created by tippecanoe."
