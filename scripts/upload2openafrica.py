@@ -10,6 +10,7 @@ def get_args():
   parser.add_argument("--pkg", dest="package", help="Target url of your package", required=True)
   parser.add_argument("--title", dest="title", help="Title of your package", required=True)
   parser.add_argument("--file", dest="file", help="Relative path of file which you would like to upload", required=True)
+  parser.add_argument("--desc", dest="description", help="any description for your file", required=True)
   args = parser.parse_args()
 
   return args
