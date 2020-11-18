@@ -34,7 +34,8 @@ module.exports = {
                   row_to_json((
                     SELECT p FROM (
                       SELECT
-                        x.pipe_id as fid,
+                        x.material as id,
+                        x.pipe_id,
                         x.material,
                         x.pipe_size,
                         x.pressure,
@@ -71,7 +72,8 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                   SELECT
-                  	x.connection_id as fid, 
+                    x.connection_type as id, 
+                    x.connection_id,
                     x.connection_type,
                     x.no_user, 
                     x.water_meter, 
@@ -113,7 +115,8 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                   SELECT
-                  	x.chamber_id as fid, 
+                    x.chamber_type as id, 
+                    x.chamber_id,
                     x.chamber_type, 
                     x.chamber_size, 
                     x.material, 
@@ -157,7 +160,8 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                   SELECT
-                  	x.watersource_id as fid, 
+                    x.source_type as id, 
+                    x.watersource_id,
                     x.source_type, 
                     x.discharge,  
                     x.water_meter, 
@@ -201,7 +205,8 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                   SELECT
-                    x.reservoir_id as fid, 
+                    x.reservoir_type as id, 
+                    x.reservoir_id,
                     x.reservoir_type,
                     x.capacity, 
                     x.material, 
@@ -247,7 +252,8 @@ module.exports = {
                 row_to_json((
                   SELECT p FROM (
                     SELECT
-                      x.pumpingstation_id as fid, 
+                      x.pumpingstation_id as id, 
+                      x.pumpingstation_id,
                       a.status, 
                       x.head_pump, 
                       x.power_pump, 
@@ -563,6 +569,7 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                 SELECT
+                  x.wss_type as id,
                   x.wss_id,
                   x.wss_name,  
                   x.wss_type,
@@ -638,6 +645,7 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                 SELECT
+                  x.wss_type as id,
                   x.wss_id, 
                   x.wss_name
                 ) AS p
@@ -670,6 +678,7 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                 SELECT
+                  x.dist_id as id,
                   x.dist_id
                 ) AS p
               )) AS properties
@@ -701,6 +710,7 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                 SELECT
+                  x.dist_id as id, 
                   x.dist_id, 
                   x.district
                 ) AS p
@@ -733,6 +743,7 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                 SELECT
+                  x.sect_id as id,
                   x.sect_id
                 ) AS p
               )) AS properties
@@ -764,7 +775,8 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                 SELECT
-                  x.sect_id, 
+                  x.sect_id as id, 
+                  x.sect_id,
                   x.sector
                 ) AS p
               )) AS properties
@@ -796,6 +808,7 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                 SELECT
+                  x.cell_id as id,
                   x.cell_id
                 ) AS p
               )) AS properties
@@ -827,6 +840,7 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                 SELECT
+                  x.cell_id as id, 
                   x.cell_id, 
                   x.cell
                 ) AS p
@@ -859,6 +873,7 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                 SELECT
+                  x.vill_id as id,
                   x.vill_id
                 ) AS p
               )) AS properties
@@ -890,6 +905,7 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                 SELECT
+                  x.vill_id as id, 
                   x.vill_id, 
                   x.village
                 ) AS p
@@ -922,6 +938,7 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                   SELECT
+                    x.wsf_type as id,
                   	x.id fid, 
                     x.wsf_code, 
                     x.wsf_type, 
