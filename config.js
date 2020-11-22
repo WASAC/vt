@@ -34,7 +34,7 @@ module.exports = {
                   row_to_json((
                     SELECT p FROM (
                       SELECT
-                        x.material as id,
+                        x.wss_id as id,
                         x.pipe_id,
                         x.material,
                         x.pipe_size,
@@ -72,7 +72,7 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                   SELECT
-                    x.connection_type as id, 
+                    x.wss_id as id, 
                     x.connection_id,
                     x.connection_type,
                     x.no_user, 
@@ -115,7 +115,7 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                   SELECT
-                    x.chamber_type as id, 
+                    x.wss_id as id, 
                     x.chamber_id,
                     x.chamber_type, 
                     x.chamber_size, 
@@ -160,7 +160,7 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                   SELECT
-                    x.source_type as id, 
+                    x.wss_id as id, 
                     x.watersource_id,
                     x.source_type, 
                     x.discharge,  
@@ -205,7 +205,7 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                   SELECT
-                    x.reservoir_type as id, 
+                    x.wss_id as id, 
                     x.reservoir_id,
                     x.reservoir_type,
                     x.capacity, 
@@ -252,7 +252,7 @@ module.exports = {
                 row_to_json((
                   SELECT p FROM (
                     SELECT
-                      x.pumpingstation_id as id, 
+                      x.wss_id as id, 
                       x.pumpingstation_id,
                       a.status, 
                       x.head_pump, 
@@ -569,7 +569,7 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                 SELECT
-                  x.wss_type as id,
+                  x.wss_id as id,
                   x.wss_id,
                   x.wss_name,  
                   x.wss_type,
@@ -938,8 +938,7 @@ module.exports = {
               row_to_json((
                 SELECT p FROM (
                   SELECT
-                    x.wsf_type as id,
-                  	x.id fid, 
+                    x.id as id,
                     x.wsf_code, 
                     x.wsf_type, 
                     x.wsf_name, 
