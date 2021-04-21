@@ -549,6 +549,14 @@ module.exports = {
             GROUP BY
               y.wss_id
             )z
+          ),
+          private_operator as (
+              SELECT 
+                a.wss_id,
+                b.po_name
+              FROM management a 
+          LEFT JOIN private_operator b
+          ON a.po_id = b.po_id
           )
           -- main SQL
           SELECT row_to_json(featurecollection) AS json FROM (
@@ -573,6 +581,7 @@ module.exports = {
                   x.wss_id,
                   x.wss_name,  
                   x.wss_type,
+                  private_operator.po_name as management,
                   x.status,
                   x.description,
                   household.no_household as household,
@@ -618,6 +627,7 @@ module.exports = {
               LEFT JOIN pipeline_year ON x.wss_id = pipeline_year.wss_id
               LEFT JOIN pipeline_material ON x.wss_id = pipeline_material.wss_id
               LEFT JOIN pipeline_diameter ON x.wss_id = pipeline_diameter.wss_id
+              LEFT JOIN private_operator ON x.wss_id = private_operator.wss_id
               WHERE NOT ST_IsEmpty(x.geom)
             ) AS feature
           ) AS featurecollection
