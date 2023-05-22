@@ -28,7 +28,7 @@ module.exports = {
                     SELECT t FROM (
                       SELECT
                         14 as maxzoom,
-                        9 as minzoom
+                        10 as minzoom
                     ) AS t
                   )) AS tippecanoe,
                   row_to_json((
