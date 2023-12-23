@@ -1,8 +1,8 @@
 version: '2'
 services:
   nodejs:
-    # image: wasac/vt:v0.0.2
-    build: .
+    image: ghcr.io/wasac/vt:v0.0.3
+    # build: .
     environment: 
      - db_user=postgres
      - db_password=$db_password
