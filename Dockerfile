@@ -1,5 +1,5 @@
 # Start from ubuntu
-FROM node:lts-bullseye
+FROM ubuntu:16.04
 
 # Update repos and install dependencies
 RUN apt-get update \
@@ -8,15 +8,23 @@ RUN apt-get update \
   build-essential \
   libsqlite3-dev \
   zlib1g-dev \
-  git
+  curl \
+  wget \
+  git \
+  nodejs \
+  npm
 
 # Build tippecanoe
 RUN mkdir -p /tmp/src
 WORKDIR /tmp/src
-RUN git clone https://github.com/felt/tippecanoe.git
+RUN git clone https://github.com/mapbox/tippecanoe.git
 WORKDIR /tmp/src/tippecanoe
 RUN make \
     && make install
+
+# Install Nodejs
+RUN npm cache clean && npm install n -g && n stable \
+    && n 12.18.1 && ln -sf /usr/local/bin/node /usr/bin/node
 
 # Install postgis2mbtiles-docker
 RUN mkdir -p /tmp/src
