@@ -6,7 +6,7 @@ module.exports = {
       password:process.env.db_password,
       host:process.env.db_host,
       port:process.env.db_port,
-      database:'rwss_assets',
+      database:process.env.db_name,
     },
     layers : [
         {

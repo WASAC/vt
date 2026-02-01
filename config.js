@@ -12,7 +12,8 @@ module.exports = {
     description: 'Vector tiles for water supply data at Rural Water and Sanitation Services in WASAC, Rwanda',
     attribution: '©WASAC, Ltd.',
     mbtiles: __dirname + '/data/rwss.mbtiles',
-    createPmtiles: true,
+    ghpages: __dirname + '/public/tiles',
+    // createPmtiles: true,
     minzoom: 8,
     maxzoom: 14,
     layers : [
