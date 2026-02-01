@@ -9,6 +9,7 @@ on:
     paths:
       - "data/**"
       - "public/**"
+  workflow_dispatch:
 
 jobs:
   build:
